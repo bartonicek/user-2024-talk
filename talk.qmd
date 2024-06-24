@@ -1,0 +1,257 @@
+---
+title: "The hidden algebra of interactive visualization"
+author: "Adam Bartonicek"
+format: 
+  revealjs:
+    theme: simple
+editor: visual
+editor_options: 
+  chunk_output_type: console
+bibliography: references.bib
+---
+
+## Stacking vs. dodging
+
+```{css}
+.middle {
+  text-align: center;
+}
+
+.center-y {
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.text-replace {
+  color: #778899;
+}
+
+```
+
+```{r}
+# knitr::opts_chunk$set(
+#   dev.args = list(bg = "transparent")
+# )
+```
+
+```{r}
+library(ggplot2)
+library(patchwork)
+
+mtcars$cyl2 <- factor(mtcars$cyl, labels = c("A", "B", "C"))
+mtcars$am <- factor(mtcars$am)
+
+theme_set(theme_bw() +
+            theme(panel.grid = element_blank(),
+                  panel.border = element_blank())
+          )
+
+my_theme <- ggplot() +
+  scale_fill_manual(values = c("grey80", "indianred")) +
+  guides(fill = "none") +
+  labs(x = NULL, y = NULL)
+
+p1 <- my_theme + geom_bar(data = mtcars, aes(cyl, fill = am))
+p2 <- my_theme + geom_bar(data = mtcars, aes(cyl, fill = am), 
+                    position = position_dodge()) + 
+  scale_y_continuous(breaks = 0:3 * 4)
+
+p1 + plot_spacer() + p2 + plot_layout(widths = c(1, 0.25, 1))
+```
+
+## Dodging superior to stacking?
+
+-   @cleveland1984 showed that people are worse at reading information from stacked vs. dodged barcharts
+-   Some authors to recommend not using them [@kosara2016; @wilke2019]
+-   However, stacking is used A LOT in interactive data visualization [see e.g. @murray2017; @vegalite2022; @vanderplas2018; @swayne2003; @theus2002; @urbanek2011; @wills2008,...]
+
+## Has the interactive data visualization community failed to catch up with best practices? {.center .middle}
+
+## Case study: Linked selection
+
+-   Linked selection (aka "brushing", "highlighting") is one of the most useful interactive features [@buja1996; @heer2012; @ware2019]
+-   Click or click-and-drag to select an object and highlight the corresponding cases across all "linked" plots
+-   Explore trends across dynamic subsets of the data
+
+## Example {.center .middle}
+
+## Stacking better for linked selection?
+
+```{r}
+
+set.seed(89719)
+mtcars$group1 <- factor(sample(rep(c(0, 1), c(27, 5))))
+mtcars$group2 <- factor(sample(rep(c(0, 1), c(17, 15))))
+mtcars$group3 <- factor(sample(rep(c(0, 1), c(7, 25))))
+
+plots <- list()
+
+for (i in 1:3) {
+  mtcars$group <- mtcars[[paste0("group", i)]]
+  plots[[i]] <- my_theme + geom_bar(data = mtcars, mapping = aes(cyl, fill = group))
+  plots[[3 + i]] <- plot_spacer()
+  plots[[6 + i]] <- my_theme + geom_bar(data = mtcars, 
+                                  mapping = aes(cyl, fill = group), 
+                                  position = "dodge")
+}
+
+wrap_plots(plots, nrow = 3, heights = c(1, 0.25, 1))
+```
+
+## Stacking (highlighting) provides context {.center .middle}
+
+## Can anything be stacked? {.center .middle}
+
+## Can you spot what's wrong with this plot?
+
+```{r}
+#| echo: true
+
+ggplot(mtcars, aes(cyl, mpg, fill = am)) +
+  geom_bar(stat = "summary", fun = "mean") +
+  scale_fill_manual(values = c("grey80", "indianred")) +
+  guides(fill = "none")
+
+```
+
+## Can you spot what's wrong with this plot?
+
+```{r}
+#| echo: true
+#| code-line-numbers: "2"
+
+ggplot(mtcars, aes(cyl, mpg, fill = am)) +
+  geom_bar(stat = "summary", fun = "mean") +
+  scale_fill_manual(values = c("grey80", "indianred")) +
+  guides(fill = "none")
+
+```
+
+## Can you spot what's wrong with this plot?
+
+```{r}
+#| echo: true
+#| code-line-numbers: "2"
+
+ggplot(mtcars, aes(cyl, mpg, fill = am)) +
+  geom_bar(stat = "summary", fun = "mean", position = "stack") +
+  scale_fill_manual(values = c("grey80", "indianred")) +
+  guides(fill = "none")
+
+```
+
+## 
+
+::: center-y
+> "Stacking is useful when the sum of the amounts represented by the individual stacked bars is in itself a meaningful amount" [@wilke2019, p. 52].
+:::
+
+## 
+
+::: center-y
+> "\[...\] It is very important that if the element’s size is used to display a statistic, then that statistic must be summable. Stacking bars that represent counts, sums, or percentages is fine, but a stacked bar chart where bars show average values is generally meaningless." [@wills2011, p. 112].
+:::
+
+## 
+
+::: center-y
+> "\[...\] We do this to ensure that aggregate statistics are always computed over the input data, and so users do not inadvertantly compute e.g., averages of averages, which can easily lead to misinterpretation." [@wu2022]
+:::
+
+## Are sums special? {.center .middle}
+
+## The [sum]{.text-replace} of group [sum]{.text-replace}s is equal to the [sum]{.text-replace} on the whole {.center .middle}
+
+## The [foo]{.text-replace} of group [foo]{.text-replace}s is equal to the [foo]{.text-replace} on the whole {.center .middle}
+
+## Other statistics work too!
+
+```{r}
+
+stack <- function(values, fn, initial) {
+  values[is.na(values)] <- initial
+  for (i in seq_along(values)) values[i] <- fn(values[i - 1], values[i])
+  values
+}
+
+group <- factor(rep(c("A", "B"), each = 2))
+subgroup <- factor(rep(1:2, 2))
+value <- c(NA, 1.5, 1.1, 1.6)
+
+sum_value <- rev(unlist(tapply(value, group, function(x) stack(x, sum, 0))))
+prod_value <- rev(unlist(tapply(value, group, function(x) stack(x, prod, 1))))
+max_value <- rev(unlist(tapply(value, group, function(x) stack(x, max, 0))))
+
+or_na <- function(x) ifelse(is.na(x), "NA", x)
+show_value <- or_na(value[c(3, 4, 1, 2)])
+
+d1 <- data.frame(group, subgroup, value = value[4:1], 
+                 sum_value, prod_value, max_value)
+
+format_label <- function(value, symbol) {
+  ifelse(is.na(value), value, paste(symbol, value))
+}
+
+p0 <- my_theme
+
+p1 <- p0 +
+  geom_text(aes(group, subgroup, label = show_value)) +
+  geom_hline(aes(yintercept = 1.5), linewidth = 0.2) +
+  geom_vline(aes(xintercept = 1.5), linewidth = 0.2) +
+  scale_y_discrete(labels = c("Red", "Grey")) +
+  theme(panel.border = element_rect(fill = NA))
+
+p2 <- p0 +
+  geom_bar(mapping = aes(group, sum_value, fill = subgroup), 
+           stat = "identity", position = "identity") +
+  geom_label(aes(group, sum_value, label = format_label(rev(value), "+"))) +
+  scale_y_continuous(limits = c(0, 3)) +
+  labs(title = "Sum")
+
+p3 <- p0 +
+  geom_bar(mapping = aes(group, prod_value, fill = subgroup), 
+           stat = "identity", position = "identity") +
+  geom_rect(aes(xmin = 0.5, xmax = 2.5, ymin = 0, ymax = 1), 
+            fill = "white") + # Use to mask the bar starting from 0
+  geom_label(aes(group, prod_value, label = format_label(rev(value), "x"))) +
+  coord_cartesian(ylim = c(1, 1.8)) + 
+  labs(title = "Product")
+
+p4 <- p0 +
+  geom_bar(mapping = aes(group, max_value, fill = subgroup), 
+           stat = "identity", position = "identity") +
+  geom_label(aes(group, max_value, label = format_label(rev(value), "max"))) +
+  scale_y_continuous(limits = c(0, 1.75)) +
+  labs(title = "Maximum")
+
+p1 + plot_spacer() + p2 + p3 + p4 + 
+  plot_layout(nrow = 1, 
+              widths = c(0.5, 0.25, 1, 1, 1))
+
+```
+
+## Monoids
+
+-   A monoid is a tuple $(M, \otimes, e)$ consisting of:
+    -   A collection of objects $M$ (a set)
+    -   A binary operation $\otimes: M \times M \to M$
+    -   A neutral element $e$
+-   Such that, for all $x, y, z \in M$:
+    -   Unitality: $x \otimes e = e \otimes x = x$
+    -   Associativity: $(x \otimes y) \otimes z = x \otimes (y \otimes z)$
+
+## 
+
+### "We have a bunch of elements, some neutral element, and a way of combining the elements such that brackets don't matter." {.center-y .middle}
+
+## Example: Sums of natural numbers
+
+$$1 + 0 = 0 + 1$$ $$(1 + 2) + 3 = 1 + (2 + 3)$$
+
+## Example: Products of real numbers
+
+$$1.96 \times 1 = 1 \times 1.96$$ $$(1.959 \times 3.141) \times 2.718 = 1.959 \times (3.141 \times 2.718)$$
+
+## References

@@ -1,0 +1,339 @@
+---
+title: "The Treachery of Images"
+subtitle: "Exploring the Interdependence Between Graphics,<br> Statistics, and Interaction"
+authors:
+  - name: "Adam Bartonicek"
+  - name: "Dr. Simon Urbanek"
+  - name: "Dr. Paul Murrell"
+affiliations: 
+  - "The University of Auckland"
+format: revealjs
+bibliography: references.bib
+editor_options: 
+  chunk_output_type: console
+---
+
+## Exploring data interactively { .center .smaller .middle }
+https://github.com/bartonicek/plotscape/tree/master/packages/plotscaper
+
+
+```{css}
+
+.middle {
+  text-align: center
+}
+
+
+```
+
+## Linked selection { }
+
+
+```{r}
+#| fig-align: center
+#| 
+library(ggplot2)
+library(patchwork)
+
+xmin <- 2
+xmax <- 4.5
+ymin <- 14
+ymax <- 25
+
+mtcars$x <- factor(mtcars$cyl, labels = c("A", "B", "C"))
+mtcars$y <- mtcars$mpg
+mtcars$zz <- factor(mtcars$wt > xmin & mtcars$wt < xmax & 
+                     mtcars$mpg > ymin & mtcars$mpg < ymax)
+mtcars$z <- factor(mtcars$am)
+
+theme_set(theme_bw() +
+            theme(panel.grid = element_blank(),
+                  panel.border = element_blank())
+          )
+
+t <- ggplot() +
+  scale_fill_manual(values = c("grey80", "indianred")) +
+  scale_colour_manual(values = c("grey80", "indianred")) +
+  guides(fill = "none", col = "none") +
+  labs(x = NULL, y = NULL)
+
+p1 <- t +
+  geom_point(data = mtcars, aes(wt, mpg, col = zz), size = 4) +
+  annotate("rect", xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax,
+           fill = NA, col = "black", lty = "dashed")
+p2 <- t + geom_bar(data = mtcars, aes(x, fill = zz))
+
+p1 + plot_spacer() + p2 + plot_layout(widths = c(1, 0.1, 1))
+
+```
+
+- Aka “brushing” or “highlighting”
+- Select objects and highlight the corresponding cases
+- One of the most useful interactive features [@buja1996; @heer2012; @ward2015; @ware2019]
+
+## Surprisingly tricky to implement { .center .middle }
+
+## Some plots work better than others...
+
+```{r}
+#| fig-align: center
+
+p3 <- t + geom_boxplot(data = mtcars, aes(x, y, fill = zz))
+p2 + plot_spacer() + p3 + plot_layout(widths = c(1, 0.1, 1))
+```
+
+## Why is that? { .center .middle }
+
+## A plot is more than just <br> geometric objects... { .center .middle }
+
+##
+
+![The Treachery of Images, René Magritte [-@magritte1929]](magritte2.jpg){ fig-align="center" height="550" }
+
+##
+
+```{r}
+#| fig-width: 5
+#| fig-height: 4
+#| fig-align: center
+ggplot(mtcars, aes(x, y, fill = z)) +
+  geom_bar(stat = "summary", fun = "mean") +
+  annotate("text", 3.4, 50, 
+           label = "This is not a barplot.", col = "#433A36ff",
+           size = 6, family = "serif", fontface = "italic",
+           vjust = 1,  hjust = 1) +
+  ylim(c(0, 60)) +
+  scale_fill_manual(values = c("#815A38ff", "#433A36ff")) +
+  guides(fill = "none") +
+  labs(x = NULL, y = NULL) +
+  theme(
+    panel.background = element_rect(fill = "#E9DEC8ff")
+  )
+
+```
+
+## Why is that? { .center .middle }
+
+##
+
+```{r}
+#| echo: true
+#| fig-align: center
+
+ggplot(mtcars, aes(x, y, fill = z)) +
+  geom_bar(stat = "summary", fun = "mean") +
+  scale_fill_manual(values = c("grey80", "indianred")) +
+  guides(fill = "none")
+```
+
+##
+
+```{r}
+#| echo: true
+#| fig-align: center
+#| code-line-numbers: "2"
+
+ggplot(mtcars, aes(x, y, fill = z)) +
+  geom_bar(stat = "summary", fun = "mean") +
+  scale_fill_manual(values = c("grey80", "indianred")) +
+  guides(fill = "none")
+```
+
+##
+
+```{r}
+#| echo: true
+#| fig-align: center
+#| code-line-numbers: "2"
+
+ggplot(mtcars, aes(x, y, fill = z)) +
+  geom_bar(stat = "summary", fun = "mean", position = "stack") +
+  scale_fill_manual(values = c("grey80", "indianred")) +
+  guides(fill = "none")
+```
+
+## The height of the stacked bars is not a valid summary statistic... { .center .middle }
+
+## { .center }
+
+>"Stacking is useful when the sum of the amounts represented by the individual stacked bars is in itself a meaningful amount" [@wilke2019, p. 52].
+
+## { .center }
+
+>"Because this gives the visual impression of one element that is the sum of several others, it is very important that if the element’s size is used to display a statistic, then that statistic must be summable. Stacking bars that represent counts, sums, or percentages are fine, but a stacked bar chart where bars show average values is generally meaningless." [@wills2011, p. 112].
+
+## Stacking some statistics is okay, stacking others is not { .center .middle }
+
+## Can we make this idea precise? Are other statistics "stackable"? { .center .middle }
+
+## { .center .middle }
+
+> The ***sum*** of group ***sum***s is equal to the ***sum*** on the whole
+
+## { .center .middle }
+
+> The ***foo*** of group ***foo***s is equal to the ***foo*** on the whole
+
+## Other statistics behave this way too... { .center .middle }
+
+##
+
+```{r}
+#| fig-width: 6
+#| fig-height: 4
+#| fig-align: center
+
+library(ggplot2)
+library(patchwork)
+
+stack <- function(values, fn, initial) {
+  values[is.na(values)] <- initial
+  for (i in seq_along(values)) values[i] <- fn(values[i - 1], values[i])
+  values
+}
+
+group <- factor(rep(c("A", "B"), each = 2))
+subgroup <- factor(rep(1:2, 2))
+value <- c(NA, 1.5, 1.1, 1.6)
+
+sum_value <- rev(unlist(tapply(value, group, function(x) stack(x, sum, 0))))
+prod_value <- rev(unlist(tapply(value, group, function(x) stack(x, prod, 1))))
+max_value <- rev(unlist(tapply(value, group, function(x) stack(x, max, 0))))
+
+or_na <- function(x) ifelse(is.na(x), "NA", x)
+show_value <- or_na(value[c(3, 4, 1, 2)])
+
+d1 <- data.frame(group, subgroup, value = value[4:1], 
+                 sum_value, prod_value, max_value)
+
+format_label <- function(value, symbol) {
+  ifelse(is.na(value), value, paste(symbol, value))
+}
+
+p0 <- ggplot(d1) +
+  scale_fill_manual(values = c("grey80", "indianred")) +
+  guides(fill = "none") +
+  labs(x = NULL, y = NULL) +
+  theme_bw() +
+  theme(
+    axis.ticks = element_blank(),
+    panel.grid = element_blank(),
+    plot.title = element_text(size = 14, hjust = 0.1, vjust = -3),
+    panel.border = element_blank(),
+)
+
+p2 <- p0 +
+  geom_bar(mapping = aes(group, sum_value, fill = subgroup), 
+           stat = "identity", position = "identity") +
+  geom_label(aes(group, sum_value, label = format_label(value, "+")),
+             size = 3) +
+  scale_y_continuous(limits = c(0, 3)) +
+  labs(title = "Sum")
+
+p3 <- p0 +
+  geom_bar(mapping = aes(group, prod_value, fill = subgroup), 
+           stat = "identity", position = "identity") +
+  geom_rect(aes(xmin = 0.5, xmax = 2.5, ymin = 0, ymax = 1), 
+            fill = "white") + # Use to mask the bar starting from 0
+  geom_label(aes(group, prod_value, label = format_label(value, "x")),
+             size = 3) +
+  coord_cartesian(ylim = c(1, 1.8)) + 
+  labs(title = "Product")
+
+p4 <- p0 +
+  geom_bar(mapping = aes(group, max_value, fill = subgroup), 
+           stat = "identity", position = "identity") +
+  geom_label(aes(group, max_value, label = format_label(value, "max")),
+             size = 3) +
+  scale_y_continuous(limits = c(0, 1.75)) +
+  labs(title = "Maximum")
+
+p2 + p3 + p4 + plot_layout(nrow = 1)
+
+
+```
+
+## We need some math... { .center .middle }
+
+## Monoids { .center }
+
+- A monoid is a tuple $(M, \otimes, e)$ consisting of of:
+  - A set of objects $M$
+  - A binary operation $\otimes: M \times M \to M$
+  - A neutral object $e \in M$
+- Subject to two rules...
+
+## Monoids: Rules { .center }
+
+- Unitality: $x \otimes e = e \otimes x = x$
+- Associativity: $x \otimes (y \otimes z) = (x \otimes y) \otimes z$
+
+## Example: Sums { .center .middle }
+
+$$1 + 0 = 0 + 1 = 1$$
+$$1  + (2 + 3) = (1 + 2) + 3$$
+
+## Example: Products { .center .middle }
+
+$$1 \times 2 = 2 \times 1 = 2$$
+$$2 \times (3 \times 4) = (2 \times 3) \times 4$$
+
+## Example: Maximum { .center .middle }
+
+$$\max(x, -\infty) = \max(-\infty, x) = x$$
+$$\max(x, \max(y, z)) = \max(\max(x, y), z)$$
+
+## Counterexample: Exponentiation { .center .middle }
+
+$$(x)^1 = x \qquad \text{but} \qquad 1^x \neq x$$
+$$(x^y)^z \neq x^{(y^z)}$$
+
+
+## Counterexample: Averages { .center .middle }
+
+$$\text{mean}(x, ?) = x$$
+$$\text{mean}(x, \text{mean}(y, z)) \neq \text{mean}(\text{mean}(x, y), z)$$
+
+## Monoids preserve set union { .center }
+
+- Suppose we have some subsets of the data $A, B \subseteq D$, and a monoidal summary $F$ such that e.g.:
+
+$$F(A) = a_1 \otimes a_2 \otimes \ldots \otimes a_n$$
+
+- Combining summaries is the same as summarizing union:
+
+$$\begin{aligned}
+F(A) \otimes F(B) &= (a_1 \otimes a_2 \otimes \ldots a_n) \otimes (b_1 \otimes b_2 \otimes \ldots b_m) \\
+&= a_1 \otimes a_2 \otimes \ldots a_n \otimes b_1 \otimes b_2 \otimes \ldots b_m \\
+&= F(A \cup B)
+\end{aligned}$$
+
+## This diagram commutes...
+
+```{tikz}
+#| fig-align: center
+
+\usetikzlibrary{cd}
+
+\begin{tikzcd}
+	& A \\
+	{A \cup B} && {A \cup B \cup C} \\
+	& {F(A)} \\
+	{F(A \cup B)} && {F(A \cup B \cup C)}
+	\arrow["{- \cup B}"', from=1-2, to=2-1]
+	\arrow["{- \cup (B \cup C)}", from=1-2, to=2-3]
+	\arrow[dashed, from=1-2, to=3-2]
+	\arrow["{- \cup C}"', near start, from=2-1, to=2-3]
+	\arrow[dashed, from=2-1, to=4-1]
+	\arrow[dashed, from=2-3, to=4-3]
+	\arrow["{- \otimes F(B)}"', near start, from=3-2, to=4-1]
+	\arrow["{- \otimes F(B \cup C)}", near start, from=3-2, to=4-3]
+	\arrow["{- \otimes F(C)}"', from=4-1, to=4-3]
+\end{tikzcd}
+```
+
+## We can compare nested subsets! { .center .middle }
+
+$F(A)$ vs. $F(A \cup B)$
+
+## References
