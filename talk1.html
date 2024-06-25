@@ -414,32 +414,39 @@
 <div class="quarto-title-authors">
 <div class="quarto-title-author">
 <div class="quarto-title-author-name">
-Adam Bartonicek 
+Adam Bartonicek <br> Dr.&nbsp;Simon Urbanek <br> Dr.&nbsp;Paul Murrell 
 </div>
-</div>
-<div class="quarto-title-author">
-<div class="quarto-title-author-name">
-Dr.&nbsp;Simon Urbanek 
-</div>
-</div>
-<div class="quarto-title-author">
-<div class="quarto-title-author-name">
-Dr.&nbsp;Paul Murrell 
-</div>
-</div>
+        <p class="quarto-title-affiliation">
+            The University of Auckland
+          </p>
+    </div>
 </div>
 
 </section>
 <section id="exploring-data-interactively" class="slide level2 center smaller middle">
 <h2>Exploring data interactively</h2>
-<p>https://github.com/bartonicek/plotscape/tree/master/packages/plotscaper</p>
+<p><a href="https://github.com/bartonicek/plotscape/tree/master/packages/plotscaper">https://github.com/bartonicek/plotscape/tree/master/packages/plotscaper</a></p>
 <div class="cell">
 <style type="text/css">
 
 .middle {
-  text-align: center
+  text-align: center;
 }
 
+.quarto-title-authors {
+  color: grey;
+  justify-content: right !important;
+  text-align: right;
+  font-size: 18pt;
+}
+
+.quarto-title-author-name {
+  margin-bottom: 2rem !important;
+}
+
+.quarto-title-affiliation {
+  font-size: 18pt !important;
+}
 
 </style>
 </div>
@@ -460,9 +467,6 @@ Dr.&nbsp;Paul Murrell
 <h2>Some plots work better than others…</h2>
 
 <img data-src="talk1_files/figure-revealjs/unnamed-chunk-3-1.png" width="960" class="r-stretch quarto-figure-center"></section>
-<section id="why-is-that" class="slide level2 center middle">
-<h2>Why is that?</h2>
-</section>
 <section id="a-plot-is-more-than-just-geometric-objects" class="slide level2 center middle">
 <h2>A plot is more than just <br> geometric objects…</h2>
 </section>
@@ -479,9 +483,6 @@ Dr.&nbsp;Paul Murrell
 <h2></h2>
 
 <img data-src="talk1_files/figure-revealjs/unnamed-chunk-4-1.png" width="480" class="r-stretch quarto-figure-center"></section>
-<section id="why-is-that-1" class="slide level2 center middle">
-<h2>Why is that?</h2>
-</section>
 <section id="section-2" class="slide level2">
 <h2></h2>
 <div class="cell" data-layout-align="center">
@@ -524,14 +525,11 @@ Dr.&nbsp;Paul Murrell
 <section id="section-6" class="slide level2 center">
 <h2></h2>
 <blockquote>
-<p>“Because this gives the visual impression of one element that is the sum of several others, it is very important that if the element’s size is used to display a statistic, then that statistic must be summable. Stacking bars that represent counts, sums, or percentages are fine, but a stacked bar chart where bars show average values is generally meaningless.” <span class="citation" data-cites="wills2011">(<a href="#/references" role="doc-biblioref" onclick="">Wills 2011, 112</a>)</span>.</p>
+<p>“[…] It is very important that if the element’s size is used to display a statistic, then that statistic must be summable. Stacking bars that represent counts, sums, or percentages is fine, but a stacked bar chart where bars show average values is generally meaningless.” <span class="citation" data-cites="wills2011">(<a href="#/references" role="doc-biblioref" onclick="">Wills 2011, 112</a>)</span>.</p>
 </blockquote>
 </section>
-<section id="stacking-some-statistics-is-okay-stacking-others-is-not" class="slide level2 center middle">
-<h2>Stacking some statistics is okay, stacking others is not</h2>
-</section>
-<section id="can-we-make-this-idea-precise-are-other-statistics-stackable" class="slide level2 center middle">
-<h2>Can we make this idea precise? Are other statistics “stackable”?</h2>
+<section id="can-we-only-do-highlighting-on-sums" class="slide level2 center middle">
+<h2>Can we only do highlighting on sums?</h2>
 </section>
 <section id="section-7" class="slide level2 center middle">
 <h2></h2>
@@ -565,6 +563,7 @@ Dr.&nbsp;Paul Murrell
 <li>A neutral object <span class="math inline">\(e \in M\)</span></li>
 </ul></li>
 <li>Subject to two rules…</li>
+<li>[see e.g. <span class="citation" data-cites="fong2019">Fong and Spivak (<a href="#/references" role="doc-biblioref" onclick="">2019</a>)</span>; lawvere2009]</li>
 </ul>
 </section>
 <section id="monoids-rules" class="slide level2 center">
@@ -572,6 +571,7 @@ Dr.&nbsp;Paul Murrell
 <ul>
 <li>Unitality: <span class="math inline">\(x \otimes e = e \otimes x = x\)</span></li>
 <li>Associativity: <span class="math inline">\(x \otimes (y \otimes z) = (x \otimes y) \otimes z\)</span></li>
+<li>[see e.g. <span class="citation" data-cites="fong2019">Fong and Spivak (<a href="#/references" role="doc-biblioref" onclick="">2019</a>)</span>; lawvere2009]</li>
 </ul>
 </section>
 <section id="example-sums" class="slide level2 center middle">
@@ -609,13 +609,53 @@ F(A) \otimes F(B) &amp;= (a_1 \otimes a_2 \otimes \ldots a_n) \otimes (b_1 \otim
 &amp;= F(A \cup B)
 \end{aligned}\]</span></p>
 </section>
-<section id="this-diagram-commutes" class="slide level2">
-<h2>This diagram commutes…</h2>
+<section id="as-a-diagram" class="slide level2">
+<h2>As a diagram…</h2>
 
 <img data-src="talk1_files/figure-revealjs/unnamed-chunk-9-1.png" width="960" class="r-stretch quarto-figure-center"></section>
 <section id="we-can-compare-nested-subsets" class="slide level2 center middle">
 <h2>We can compare nested subsets!</h2>
 <p><span class="math inline">\(F(A)\)</span> vs.&nbsp;<span class="math inline">\(F(A \cup B)\)</span></p>
+</section>
+<section id="linked-selection-and-monoids" class="slide level2">
+<h2>Linked selection and monoids…</h2>
+
+<img data-src="talk1_files/figure-revealjs/unnamed-chunk-10-1.png" width="960" class="r-stretch quarto-figure-center"></section>
+<section id="bonus-what-about-disjoint-subsets" class="slide level2">
+<h2>Bonus: What about disjoint subsets?</h2>
+<ul>
+<li><span class="math inline">\(F(A)\)</span> vs.&nbsp;<span class="math inline">\(F(B)\)</span></li>
+</ul>
+
+<img data-src="talk1_files/figure-revealjs/unnamed-chunk-11-1.png" width="960" class="r-stretch quarto-figure-center"></section>
+<section id="bonus-groups" class="slide level2">
+<h2>Bonus: Groups</h2>
+<ul>
+<li>The monoidal product can “collapse” info about subsets</li>
+<li>To recover <span class="math inline">\(F(B)\)</span> from <span class="math inline">\(F(A \cup B)\)</span> and <span class="math inline">\(F(A)\)</span>, we also need the inverse operator:</li>
+</ul>
+<p><span class="math display">\[F(B) = F(A \cup B) \otimes^{-1} F(A)\]</span></p>
+<ul>
+<li>The inverse exists for e.g.&nbsp;sums (minus) but not for max</li>
+<li>Monoid + inverse operator = <em>Group</em></li>
+</ul>
+</section>
+<section id="conclusion" class="slide level2">
+<h2>Conclusion</h2>
+<ul>
+<li>Interactivity is useful for exploring data</li>
+<li>Especially linked selection/highlighting</li>
+<li>We can do highlighting with statistics other than sums</li>
+<li>However, need to have specific algebraic properties:
+<ul>
+<li>Monoids for single-group highlighting (nested subsets)</li>
+<li>Groups for multi-group highlighting (disjoint subsets)</li>
+</ul></li>
+</ul>
+</section>
+<section id="thank-you" class="slide level2 center smaller middle">
+<h2>Thank you!</h2>
+<p><a href="https://github.com/bartonicek/plotscape/tree/master/packages/plotscaper">https://github.com/bartonicek/plotscape/tree/master/packages/plotscaper</a></p>
 </section>
 <section id="references" class="slide level2 smaller scrollable">
 <h2>References</h2>
@@ -625,6 +665,9 @@ F(A) \otimes F(B) &amp;= (a_1 \otimes a_2 \otimes \ldots a_n) \otimes (b_1 \otim
 <div id="refs" class="references csl-bib-body hanging-indent" role="list">
 <div id="ref-buja1996" class="csl-entry" role="listitem">
 Buja, Andreas, Dianne Cook, and Deborah F Swayne. 1996. <span>“Interactive High-Dimensional Data Visualization.”</span> <em>Journal of Computational and Graphical Statistics</em> 5 (1): 78–99.
+</div>
+<div id="ref-fong2019" class="csl-entry" role="listitem">
+Fong, Brendan, and David I Spivak. 2019. <em>An Invitation to Applied Category Theory: Seven Sketches in Compositionality</em>. Cambridge University Press.
 </div>
 <div id="ref-heer2012" class="csl-entry" role="listitem">
 Heer, Jeffrey, and Ben Shneiderman. 2012. <span>“Interactive Dynamics for Visual Analysis: A Taxonomy of Tools That Support the Fluent and Flexible Use of Visualizations.”</span> <em>Queue</em> 10 (2): 30–55.
